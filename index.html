@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedReminder & Health Tracker</title>
+  <!-- Favicon Logo -->
+  <link rel="icon" type="image/png" href="./logo.png" />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts: Prompt -->
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Prompt', 'sans-serif'] },
+          colors: {
+            medblue: '#1E56A0',
+            medgreen: '#16A34A',
+            medbg: '#F0F7FF'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- EmailJS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+
+<body class="bg-medbg text-slate-800 min-h-screen antialiased">
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed top-5 right-5 z-50 hidden bg-slate-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium transition-all"></div>
+
+  <!-- ================= AUTH SECTION (เข้าสู่ระบบ / สมัครสมาชิก) ================= -->
+  <div id="auth-section" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-xl border border-blue-100 p-8">
+      <!-- Logo -->
+      <div class="text-center mb-6">
+        <img src="./logo.png" alt="MedReminder Logo" class="w-60 mx-auto rounded-2xl object-contain" />
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex bg-slate-100 p-1 rounded-xl mb-6">
+        <button id="tab-login" onclick="toggleAuthMode('login')" class="flex-1 py-2 text-sm font-semibold rounded-lg bg-white text-medblue shadow-sm transition">เข้าสู่ระบบ</button>
+        <button id="tab-register" onclick="toggleAuthMode('register')" class="flex-1 py-2 text-sm font-semibold rounded-lg text-slate-500 transition">สมัครสมาชิก</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">อีเมล</label>
+          <input type="email" id="login-email" required placeholder="example@email.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-medblue" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">รหัสผ่าน</label>
+          <input type="password" id="login-password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-medblue" />
+        </div>
+        <button type="submit" class="w-full bg-medblue hover:bg-blue-800 text-white font-semibold py-3 rounded-xl shadow-md transition">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="space-y-4 hidden">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">ชื่อ-นามสกุล</label>
+          <input type="text" id="reg-name" required placeholder="ชื่อ-นามสกุล" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-medgreen" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">อีเมล</label>
+          <input type="email" id="reg-email" required placeholder="example@email.com" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-medgreen" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">รหัสผ่าน (อย่างน้อย 6 ตัวอักษร)</label>
+          <input type="password" id="reg-password" required minlength="6" placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-medgreen" />
+        </div>
+        <button type="submit" class="w-full bg-medgreen hover:bg-green-700 text-white font-semibold py-3 rounded-xl shadow-md transition">
+          สมัครสมาชิก
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP SECTION ================= -->
+  <div id="app-section" class="hidden min-h-screen flex flex-col md:flex-row">
+
+    <!-- Desktop Sidebar -->
+    <aside class="hidden md:flex md:flex-col md:w-64 bg-white border-r border-blue-100 p-5 justify-between fixed inset-y-0 left-0 z-30">
+      <div>
+        <div class="flex items-center gap-3 px-2 mb-8">
+          <img src="./logo.png" alt="MedReminder Logo" class="w-10 h-10 rounded-lg object-contain" />
+          <div>
+            <h2 class="font-bold text-medblue leading-tight">MedReminder</h2>
+            <p class="text-[11px] text-slate-400">Health Tracker</p>
+          </div>
+        </div>
+        <nav class="space-y-1.5">
+          <button onclick="switchTab('home')" data-nav="home" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition">
+            <i class="fa-solid fa-house w-5"></i> หน้าหลัก (Home)
+          </button>
+          <button onclick="switchTab('meds')" data-nav="meds" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition">
+            <i class="fa-solid fa-pills w-5"></i> รายการยา & เวลา
+          </button>
+          <button onclick="switchTab('appointments')" data-nav="appointments" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition">
+            <i class="fa-solid fa-calendar-check w-5"></i> นัดหมายแพทย์
+          </button>
+          <button onclick="switchTab('allergies')" data-nav="allergies" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition">
+            <i class="fa-solid fa-triangle-exclamation w-5"></i> ประวัติการแพ้ยา
+          </button>
+          <button onclick="switchTab('activities')" data-nav="activities" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition">
+            <i class="fa-solid fa-person-running w-5"></i> กิจกรรมสุขภาพ
+          </button>
+        </nav>
+      </div>
+      <div class="border-t border-slate-100 pt-4">
+        <div class="px-3 mb-3">
+          <p class="text-xs text-slate-400">ผู้ใช้งาน</p>
+          <p id="sidebar-user-name" class="text-sm font-semibold text-slate-700 truncate">-</p>
+        </div>
+        <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-sm font-medium transition">
+          <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+        </button>
+      </div>
+    </aside>
+
+    <!-- Mobile Top Header -->
+    <header class="md:hidden bg-white border-b border-blue-100 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center gap-2">
+        <img src="./logo.png" alt="MedReminder Logo" class="w-8 h-8 rounded-md object-contain" />
+        <span class="font-bold text-medblue">MedReminder</span>
+      </div>
+      <button onclick="handleLogout()" class="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium">
+        <i class="fa-solid fa-right-from-bracket mr-1"></i>ออก
+      </button>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8 max-w-5xl w-full mx-auto">
+
+      <!-- VIEW 1: HOME -->
+      <section id="view-home" class="view-section space-y-6">
+        <div class="bg-gradient-to-r from-medblue to-blue-600 rounded-3xl p-6 text-white shadow-lg">
+          <p class="text-blue-100 text-sm">สวัสดีครับ 👋</p>
+          <h2 id="home-user-name" class="text-2xl font-bold mt-0.5">ผู้ใช้งาน</h2>
+          <p class="text-xs text-blue-100 mt-2">อย่าลืมทานยาให้ตรงเวลาและดูแลสุขภาพในวันนี้นะครับ</p>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-blue-50">
+            <div class="text-medblue text-xl mb-1"><i class="fa-solid fa-pills"></i></div>
+            <p class="text-xs text-slate-500">รายการยาทั้งหมด</p>
+            <p id="stat-meds" class="text-2xl font-bold text-slate-800">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-blue-50">
+            <div class="text-medgreen text-xl mb-1"><i class="fa-solid fa-calendar-check"></i></div>
+            <p class="text-xs text-slate-500">นัดหมายแพทย์</p>
+            <p id="stat-appts" class="text-2xl font-bold text-slate-800">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-blue-50">
+            <div class="text-red-500 text-xl mb-1"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <p class="text-xs text-slate-500">ประวัติแพ้ยา</p>
+            <p id="stat-allergies" class="text-2xl font-bold text-slate-800">0</p>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-blue-50">
+            <div class="text-amber-500 text-xl mb-1"><i class="fa-solid fa-person-running"></i></div>
+            <p class="text-xs text-slate-500">บันทึกกิจกรรม</p>
+            <p id="stat-activities" class="text-2xl font-bold text-slate-800">0</p>
+          </div>
+        </div>
+
+        <!-- Today's Meds Preview -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-blue-50">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800"><i class="fa-solid fa-clock text-medblue mr-2"></i>ตารางทานยาวันนี้</h3>
+            <button onclick="switchTab('meds')" class="text-xs text-medblue font-medium hover:underline">ดูทั้งหมด</button>
+          </div>
+          <div id="home-meds-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Upcoming Appointments Preview -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-blue-50">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-slate-800"><i class="fa-solid fa-stethoscope text-medgreen mr-2"></i>นัดหมายแพทย์ที่กำลังจะมาถึง</h3>
+            <button onclick="switchTab('appointments')" class="text-xs text-medblue font-medium hover:underline">ดูทั้งหมด</button>
+          </div>
+          <div id="home-appts-list" class="space-y-3"></div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: MEDICATIONS -->
+      <section id="view-meds" class="view-section hidden space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-medblue">รายการยา & เวลาแจ้งเตือน</h2>
+            <p class="text-xs text-slate-500">จัดการยาที่ต้องรับประทานและเช็กสถานะการทานยา</p>
+          </div>
+          <button onclick="openModal('modal-med')" class="bg-medblue hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition">
+            <i class="fa-solid fa-plus mr-1"></i> เพิ่มรายการยา
+          </button>
+        </div>
+        <div id="meds-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- VIEW 3: APPOINTMENTS -->
+      <section id="view-appointments" class="view-section hidden space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-medblue">นัดหมายแพทย์ (Appointments)</h2>
+            <p class="text-xs text-slate-500">บันทึกวันเวลานัดพบแพทย์และสถานที่</p>
+          </div>
+          <button onclick="openModal('modal-appt')" class="bg-medgreen hover:bg-green-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition">
+            <i class="fa-solid fa-plus mr-1"></i> เพิ่มนัดหมาย
+          </button>
+        </div>
+        <div id="appts-list" class="space-y-3"></div>
+      </section>
+
+      <!-- VIEW 4: ALLERGIES -->
+      <section id="view-allergies" class="view-section hidden space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-red-600">ประวัติการแพ้ยา (Allergies)</h2>
+            <p class="text-xs text-slate-500">เก็บข้อมูลยาหรือสิ่งที่แพ้ไว้ตรวจสอบในยามฉุกเฉิน</p>
+          </div>
+          <button onclick="openModal('modal-allergy')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition">
+            <i class="fa-solid fa-plus mr-1"></i> เพิ่มประวัติแพ้ยา
+          </button>
+        </div>
+        <div id="allergies-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- VIEW 5: ACTIVITIES -->
+      <section id="view-activities" class="view-section hidden space-y-5">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-xl font-bold text-medblue">รายละเอียดกิจกรรมสุขภาพ (Activity)</h2>
+            <p class="text-xs text-slate-500">บันทึกการออกกำลังกาย การดื่มน้ำ หรือค่าสุขภาพประจำวัน</p>
+          </div>
+          <button onclick="openModal('modal-activity')" class="bg-medblue hover:bg-blue-800 text-white px-4 py-2.5 rounded-xl text-sm font-medium shadow-sm transition">
+            <i class="fa-solid fa-plus mr-1"></i> บันทึกกิจกรรม
+          </button>
+        </div>
+        <div id="activities-list" class="space-y-3"></div>
+      </section>
+    </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-blue-100 flex justify-around py-2 px-1 z-30">
+      <button onclick="switchTab('home')" data-nav="home" class="mobile-nav-btn flex flex-col items-center p-1.5 text-[11px]">
+        <i class="fa-solid fa-house text-lg mb-0.5"></i><span>หน้าหลัก</span>
+      </button>
+      <button onclick="switchTab('meds')" data-nav="meds" class="mobile-nav-btn flex flex-col items-center p-1.5 text-[11px]">
+        <i class="fa-solid fa-pills text-lg mb-0.5"></i><span>รายการยา</span>
+      </button>
+      <button onclick="switchTab('appointments')" data-nav="appointments" class="mobile-nav-btn flex flex-col items-center p-1.5 text-[11px]">
+        <i class="fa-solid fa-calendar-check text-lg mb-0.5"></i><span>นัดหมาย</span>
+      </button>
+      <button onclick="switchTab('allergies')" data-nav="allergies" class="mobile-nav-btn flex flex-col items-center p-1.5 text-[11px]">
+        <i class="fa-solid fa-triangle-exclamation text-lg mb-0.5"></i><span>แพ้ยา</span>
+      </button>
+      <button onclick="switchTab('activities')" data-nav="activities" class="mobile-nav-btn flex flex-col items-center p-1.5 text-[11px]">
+        <i class="fa-solid fa-person-running text-lg mb-0.5"></i><span>กิจกรรม</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+  <!-- Modal: Add Medication -->
+  <div id="modal-med" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-medblue mb-4">เพิ่มรายการยา & เวลาแจ้งเตือน</h3>
+      <form id="form-med" class="space-y-3">
+        <input type="text" id="med-name" required placeholder="ชื่อยา (เช่น พาราเซตามอล 500mg)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <input type="text" id="med-dosage" required placeholder="ขนาดรับประทาน (เช่น 1 เม็ด)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-500">เวลาทานยา</label>
+            <input type="time" id="med-time" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-slate-500">ช่วงเวลา</label>
+            <select id="med-meal" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm">
+              <option value="หลังอาหาร">หลังอาหาร</option>
+              <option value="ก่อนอาหาร">ก่อนอาหาร</option>
+              <option value="ก่อนนอน">ก่อนนอน</option>
+              <option value="พร้อมอาหาร">พร้อมอาหาร</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-3">
+          <button type="button" onclick="closeModal('modal-med')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-medblue text-white text-sm font-medium">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Appointment -->
+  <div id="modal-appt" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-medgreen mb-4">เพิ่มนัดหมายแพทย์</h3>
+      <form id="form-appt" class="space-y-3">
+        <input type="text" id="appt-title" required placeholder="หัวข้อนัดหมาย (เช่น ตรวจสุขภาพประจำปี)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <input type="text" id="appt-hospital" required placeholder="โรงพยาบาล / คลินิก / ชื่อแพทย์" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <div class="grid grid-cols-2 gap-3">
+          <input type="date" id="appt-date" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+          <input type="time" id="appt-time" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm" />
+        </div>
+        <textarea id="appt-note" rows="2" placeholder="หมายเหตุเพิ่มเติม (เช่น งดน้ำงดอาหาร)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm"></textarea>
+        <div class="flex gap-2 pt-3">
+          <button type="button" onclick="closeModal('modal-appt')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-medgreen text-white text-sm font-medium">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Allergy -->
+  <div id="modal-allergy" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-red-600 mb-4">เพิ่มประวัติการแพ้ยา</h3>
+      <form id="form-allergy" class="space-y-3">
+        <input type="text" id="allergy-name" required placeholder="ชื่อยาหรือสารที่แพ้ (เช่น Penicillin)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <input type="text" id="allergy-symptom" required placeholder="อาการที่พบ (เช่น ผื่นแดง หายใจติดขัด)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <select id="allergy-severity" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm">
+          <option value="รุนแรงมาก">ระดับความรุนแรง: รุนแรงมาก</option>
+          <option value="ปานกลาง">ระดับความรุนแรง: ปานกลาง</option>
+          <option value="เล็กน้อย">ระดับความรุนแรง: เล็กน้อย</option>
+        </select>
+        <div class="flex gap-2 pt-3">
+          <button type="button" onclick="closeModal('modal-allergy')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-medium">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Activity -->
+  <div id="modal-activity" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl w-full max-w-md p-6 shadow-xl">
+      <h3 class="text-lg font-bold text-medblue mb-4">บันทึกกิจกรรมสุขภาพ</h3>
+      <form id="form-activity" class="space-y-3">
+        <input type="text" id="act-title" required placeholder="ชื่อกิจกรรม (เช่น วิ่งออกกำลังกาย, วัดความดัน)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <input type="text" id="act-detail" required placeholder="รายละเอียด/ค่าที่วัดได้ (เช่น 30 นาที, 120/80 mmHg)" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <input type="date" id="act-date" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm" />
+        <div class="flex gap-2 pt-3">
+          <button type="button" onclick="closeModal('modal-activity')" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-medium">ยกเลิก</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-medblue text-white text-sm font-medium">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
